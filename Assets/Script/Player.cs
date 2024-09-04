@@ -1,5 +1,7 @@
+using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -24,7 +26,7 @@ public class Player : MonoBehaviour
     {
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
-        movePosition = GetComponent<Vector3>();
+        //movePosition = GetComponent<Vector3>();
 
         //direction = Vector3.zero;
     }
@@ -62,6 +64,7 @@ public class Player : MonoBehaviour
     private void OnMove(InputAction.CallbackContext context)
     {
         movePosition = context.ReadValue<Vector3>();
+        
     }
     private void OnAim(InputAction.CallbackContext context)
     {
@@ -70,5 +73,10 @@ public class Player : MonoBehaviour
     private void OnFire(InputAction.CallbackContext context)
     {
         Ray ray = Camera.main.ScreenPointToRay(aim);
+    }
+
+    private void DoShake()
+    {
+
     }
 }

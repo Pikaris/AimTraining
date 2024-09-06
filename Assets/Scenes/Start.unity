@@ -419,7 +419,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -0.24, y: 0, z: 0}
 --- !u!114 &963194229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -812,8 +812,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5edcca6aac78ef428dcdcf7fa50ea3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mouseSensitivityX: 3
-  mouseSensitivityY: 2
+  mouseSensitivityX: 0.001
+  mouseSensitivityY: 0.001
+  limitMinX: -55.5
+  limitMaxX: 45.1
   moveSpeed: 5
 --- !u!54 &1593773526
 Rigidbody:

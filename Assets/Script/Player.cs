@@ -13,9 +13,14 @@ public class Player : MonoBehaviour
 {
     [SerializeField] float mouseSensitivityX = 3.0f;
     [SerializeField] float mouseSensitivityY = 2.0f;
+    [SerializeField] float limitMinX = -60.0f;
+    [SerializeField] float limitMaxX = 60.0f;
 
-    float limitMinX = -60.0f;
-    float limitMaxX = 60.0f;
+    int monitor_Width;
+    int monitor_Height;
+
+    float rotationX;
+    float rotationY;
 
     public float moveSpeed = 5.0f;
 
@@ -36,11 +41,12 @@ public class Player : MonoBehaviour
     {
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
-        Transform child = transform.GetChild(2);
+        Transform child = transform.GetChild(0);
         vcam = child.GetComponent<CinemachineVirtualCamera>();
-        //movePosition = GetComponent<Vector3>();
 
-        //direction = Vector3.zero;
+        monitor_Width = UnityEngine.Screen.width;
+        monitor_Height = UnityEngine.Screen.height;
+        rigid.freezeRotation = true;
     }
 
     private void OnEnable()
@@ -70,19 +76,26 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
-        worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+        //worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
     }
 
     private void OnMove(InputAction.CallbackContext context)
     {
         movePosition = context.ReadValue<Vector3>();
-        
     }
     private void OnAim(InputAction.CallbackContext context)
     {
-        mousePosition.x += Mouse.current.position.x.ReadValue() * mouseSensitivityX;
-        mousePosition.y -= Mouse.current.position.y.ReadValue() * mouseSensitivityY;
-        mousePosition.x = Mathf.Clamp(mousePosition.x, limitMinX, limitMaxX);
+        worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+        //float mousePosX = Mouse.current.position.x.ReadValue() * mouseSensitivityX - monitor_Width;
+        //float mousePosY = Mouse.current.position.y.ReadValue() * mouseSensitivityY - (monitor_Height * 0.5f);
+        rotationY = worldPosition.x;
+        rotationX = worldPosition.y;
+        //rotationX = Mathf.Clamp(rotationX, limitMinX, limitMaxX);
+        vcam.transform.rotation = Quaternion.Euler(rotationX, rotationY, 0);
+        Debug.Log($"X :{worldPosition.x}");
+        Debug.Log($"Y :{worldPosition.y}");
+        Debug.Log($"transX :{transform.rotation.x}");
+        Debug.Log($"transY :{transform.rotation.y}");
     }
 
     private void OnFire(InputAction.CallbackContext context)

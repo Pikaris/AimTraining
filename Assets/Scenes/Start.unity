@@ -812,8 +812,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e5edcca6aac78ef428dcdcf7fa50ea3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mouseSensitivityX: 0.001
-  mouseSensitivityY: 0.001
+  mouseSensitivityX: 1
+  mouseSensitivityY: 1
   limitMinX: -55.5
   limitMaxX: 45.1
   moveSpeed: 5
@@ -842,7 +842,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 80
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!1 &1600238162
 GameObject:

@@ -13,14 +13,14 @@ public class Player : MonoBehaviour
 {
     [SerializeField] float mouseSensitivityX = 3.0f;
     [SerializeField] float mouseSensitivityY = 2.0f;
-    [SerializeField] float limitMinX = -60.0f;
-    [SerializeField] float limitMaxX = 60.0f;
+    [SerializeField] float limitMinX = 300.0f;
+    [SerializeField] float limitMaxX = 1000.0f;
 
     int monitor_Width;
     int monitor_Height;
 
-    float rotationX;
-    float rotationY;
+    float rotationX = 0;
+    float rotationY = 0;
 
     public float moveSpeed = 5.0f;
 
@@ -29,24 +29,27 @@ public class Player : MonoBehaviour
 
     CinemachineVirtualCamera vcam;
 
-    Vector2 mousePosition;
+    Vector3 mousePosition;
 
     Vector3 worldPosition;
     Vector3 movePosition;
+    float mouseX;
+    float mouseY;
+    float mousePosX;
+    float mousePosY;
 
-    
-    
+
 
     private void Awake()
     {
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
-        Transform child = transform.GetChild(0);
+        Transform child = transform.GetChild(2);
         vcam = child.GetComponent<CinemachineVirtualCamera>();
 
         monitor_Width = UnityEngine.Screen.width;
         monitor_Height = UnityEngine.Screen.height;
-        rigid.freezeRotation = true;
+        //rigid.freezeRotation = true;
     }
 
     private void OnEnable()
@@ -72,11 +75,22 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, vcam.transform.rotation);
+
+        mousePosX = mouseX * mouseSensitivityX * Time.fixedDeltaTime;// + (monitor_Width * 0.5f);
+        mousePosY = mouseY * mouseSensitivityY * Time.fixedDeltaTime;// + (monitor_Height * 0.5f);
+
+        rotationY = mousePosX;
+        rotationX = mousePosY;
+        vcam.transform.rotation = Quaternion.Euler(-rotationX, rotationY, 0);
     }
 
     private void Update()
     {
         //worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+    }
+
+    private void LateUpdate()
+    {
     }
 
     private void OnMove(InputAction.CallbackContext context)
@@ -85,15 +99,13 @@ public class Player : MonoBehaviour
     }
     private void OnAim(InputAction.CallbackContext context)
     {
-        worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
-        //float mousePosX = Mouse.current.position.x.ReadValue() * mouseSensitivityX - monitor_Width;
-        //float mousePosY = Mouse.current.position.y.ReadValue() * mouseSensitivityY - (monitor_Height * 0.5f);
-        rotationY = worldPosition.x;
-        rotationX = worldPosition.y;
+        //mousePosition = Mouse.current.position.ReadValue();
+        //worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+        mouseX = Mouse.current.position.x.ReadValue();
+        mouseY = Mouse.current.position.y.ReadValue();
         //rotationX = Mathf.Clamp(rotationX, limitMinX, limitMaxX);
-        vcam.transform.rotation = Quaternion.Euler(rotationX, rotationY, 0);
-        Debug.Log($"X :{worldPosition.x}");
-        Debug.Log($"Y :{worldPosition.y}");
+        Debug.Log($"X :{mousePosX}");
+        Debug.Log($"Y :{mousePosY}");
         Debug.Log($"transX :{transform.rotation.x}");
         Debug.Log($"transY :{transform.rotation.y}");
     }

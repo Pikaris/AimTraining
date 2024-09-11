@@ -9,7 +9,6 @@ public class Player : MonoBehaviour
     [SerializeField] float limitMinY = -30.0f;
     [SerializeField] float limitMaxY = 40.0f;
 
-    Vector3 screenCenter;
 
     float rotationX = 0;
     float rotationY = 0;
@@ -22,11 +21,9 @@ public class Player : MonoBehaviour
     CinemachineVirtualCamera headVcam;
 
     Vector2 mousePos;
-
-    Vector2 mouseWorldPos;
     Vector3 movePosition;
-    float mouseX;
-    float mouseY;
+    Vector3 screenCenter;
+
     float mousePosX;
     float mousePosY;
 
@@ -38,7 +35,11 @@ public class Player : MonoBehaviour
         rigid = GetComponent<Rigidbody>();
         Transform child = transform.GetChild(0);
         headVcam = child.GetComponent<CinemachineVirtualCamera>();
-        //rigid.freezeRotation = true;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        rigid.freezeRotation = true;
+
+        screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
     }
 
     private void OnEnable()
@@ -63,18 +64,17 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, vcam.transform.rotation);
         rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, Quaternion.Euler(0, rotationY, 0));
     }
 
     private void Update()
     {
-        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void LateUpdate()
     {
-        headVcam.transform.rotation *= Quaternion.Euler(-rotationX, rotationY, 0);
+        rotationX = 0;
+        rotationY = 0;
     }
 
     private void OnMove(InputAction.CallbackContext context)
@@ -84,41 +84,12 @@ public class Player : MonoBehaviour
     private void OnAim(InputAction.CallbackContext context)
     {
         mousePos = context.ReadValue<Vector2>();
-        //mousePos.z = movePosition.z + multiplyMouseSens;
-        //mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
-
-        Debug.Log(mousePos);
-
-        screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
-
-        Debug.Log(screenCenter);
-
-        ////mouseX = Mouse.current.position.x.ReadValue();
-        ////mouseY = Mouse.current.position.y.ReadValue();
-
-        //mousePosX = mouseX * mouseSensitivityX * Time.fixedDeltaTime;// + (monitor_Width * 0.5f);
-        //mousePosY = mouseY * mouseSensitivityY * Time.fixedDeltaTime;// + (monitor_Height * 0.5f);
-
-        mousePosX = (mousePos.x - screenCenter.x) * mouseSensitivityX;// * Time.deltaTime;
-        mousePosY = (mousePos.y - screenCenter.y) * mouseSensitivityY;// * Time.deltaTime;
-
-        //Debug.Log($"mouseCenterX : {mousePos.x - screenCenter.x}");
-        //Debug.Log($"mouseCenterY : {mousePos.y - screenCenter.y}");
-        //Debug.Log($"mouseX : {mousePos.x}");
-        //Debug.Log($"mouseY : {mousePos.y}");
-
-        rotationY = mousePosX;
-        rotationX = mousePosY;
-        //rotationX = Mathf.Clamp(rotationX, limitMinY, limitMaxY);
-        //Debug.Log($"X :{mousePosX}");
-        //Debug.Log($"Y :{mousePosY}");
-        //Debug.Log($"transX :{transform.rotation.x}");
-        //Debug.Log($"transY :{transform.rotation.y}");
+        LookAim();
     }
 
     private void OnFire(InputAction.CallbackContext context)
     {
-        Ray ray = Camera.main.ScreenPointToRay(mousePos);
+        Ray ray = Camera.main.ScreenPointToRay(screenCenter);
         RaycastHit hit;
         if(Physics.Raycast(ray, out hit, 200.0f))
         {
@@ -133,5 +104,18 @@ public class Player : MonoBehaviour
     private void DoShake()
     {
 
+    }
+
+    void LookAim()
+    {
+        mousePosX = mousePos.x * mouseSensitivityX * Time.deltaTime;
+        mousePosY = mousePos.y * mouseSensitivityY * Time.deltaTime;
+
+        rotationY = mousePosX;
+        rotationX = mousePosY;
+
+        rotationY = Mathf.Clamp(rotationY, limitMinY, limitMaxY);
+
+        headVcam.transform.rotation *= Quaternion.Euler(-rotationX, rotationY, 0);
     }
 }

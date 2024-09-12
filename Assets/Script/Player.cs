@@ -33,13 +33,15 @@ public class Player : MonoBehaviour
     {
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
-        Transform child = transform.GetChild(0);
+        Transform child = transform.GetChild(0).GetChild(0);
         headVcam = child.GetComponent<CinemachineVirtualCamera>();
 
         Cursor.lockState = CursorLockMode.Locked;
         rigid.freezeRotation = true;
 
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
+
+        headVcam.transform.rotation = Quaternion.Euler(0, 0, 0);
     }
 
     private void OnEnable()
@@ -73,8 +75,7 @@ public class Player : MonoBehaviour
 
     private void LateUpdate()
     {
-        rotationX = 0;
-        rotationY = 0;
+        LookAim();
     }
 
     private void OnMove(InputAction.CallbackContext context)
@@ -84,7 +85,7 @@ public class Player : MonoBehaviour
     private void OnAim(InputAction.CallbackContext context)
     {
         mousePos = context.ReadValue<Vector2>();
-        LookAim();
+        Debug.Log(mousePos);
     }
 
     private void OnFire(InputAction.CallbackContext context)
@@ -108,14 +109,21 @@ public class Player : MonoBehaviour
 
     void LookAim()
     {
+        //float camRotX = headVcam.transform.rotation.x;
+        //float camRotY = headVcam.transform.rotation.y;
+
         mousePosX = mousePos.x * mouseSensitivityX * Time.deltaTime;
         mousePosY = mousePos.y * mouseSensitivityY * Time.deltaTime;
 
         rotationY = mousePosX;
         rotationX = mousePosY;
 
-        rotationY = Mathf.Clamp(rotationY, limitMinY, limitMaxY);
+        //camRotX = Mathf.Clamp(headVcam.transform.rotation.x, limitMinY, limitMaxY);
+        //camRotY = Mathf.Clamp(headVcam.transform.rotation.y, limitMinY, limitMaxY);
 
-        headVcam.transform.rotation *= Quaternion.Euler(-rotationX, rotationY, 0);
+        //Debug.Log(rotationX);
+        //Debug.Log(rotationY);
+
+        headVcam.transform.localRotation = Quaternion.Euler(-rotationX, 0, 0) * headVcam.transform.rotation;
     }
 }

@@ -2,6 +2,9 @@ using Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+#if ENABLE_INPUT_SYSTEM
+[RequireComponent(typeof(PlayerInput))]
+#endif
 public class Player : MonoBehaviour
 {
     [SerializeField] float mouseSensitivityX = 3.0f;
@@ -15,6 +18,10 @@ public class Player : MonoBehaviour
 
     public float moveSpeed = 5.0f;
 
+#if ENABLE_INPUT_SYSTEM
+    private PlayerInput playerInput;
+#endif
+
     PlayerInputAction inputAction;
     Rigidbody rigid;
 
@@ -27,7 +34,18 @@ public class Player : MonoBehaviour
     float mousePosX;
     float mousePosY;
 
-
+    private bool IsInputDevice
+    {
+        get
+        {
+            #if ENABLE_INPUT_SYSTEM
+            return playerInput.currentControlScheme == "KM";
+            #else
+            return false;
+            #endif
+        }
+    }
+    
 
     private void Awake()
     {
@@ -42,6 +60,16 @@ public class Player : MonoBehaviour
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
 
         headVcam.transform.rotation = Quaternion.Euler(0, 0, 0);
+    }
+
+    private void Start()
+    {
+        //inputAction = GetComponent<PlayerInputAction>();
+#if ENABLE_INPUT_SYSTEM
+        playerInput = GetComponent<PlayerInput>();
+#else
+        Debug.LogError("KeyboardMouse Error");
+#endif
     }
 
     private void OnEnable()
@@ -66,7 +94,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, Quaternion.Euler(0, rotationY, 0));
+        //rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, Quaternion.Euler(0, rotationY, 0));
     }
 
     private void Update()
@@ -109,14 +137,14 @@ public class Player : MonoBehaviour
 
     void LookAim()
     {
+        //if (inputAction.Player.Aim.WasPressedThisFrame)
         //float camRotX = headVcam.transform.rotation.x;
         //float camRotY = headVcam.transform.rotation.y;
 
-        mousePosX = mousePos.x * mouseSensitivityX * Time.deltaTime;
-        mousePosY = mousePos.y * mouseSensitivityY * Time.deltaTime;
+        float deltaTimeMultiplier = IsInputDevice ? 1.0f : Time.deltaTime;
 
-        rotationY = mousePosX;
-        rotationX = mousePosY;
+        rotationY = mousePos.x * mouseSensitivityX * deltaTimeMultiplier;
+        rotationX += mousePos.y * mouseSensitivityY * deltaTimeMultiplier;
 
         //camRotX = Mathf.Clamp(headVcam.transform.rotation.x, limitMinY, limitMaxY);
         //camRotY = Mathf.Clamp(headVcam.transform.rotation.y, limitMinY, limitMaxY);
@@ -124,6 +152,7 @@ public class Player : MonoBehaviour
         //Debug.Log(rotationX);
         //Debug.Log(rotationY);
 
-        headVcam.transform.localRotation = Quaternion.Euler(-rotationX, 0, 0) * headVcam.transform.rotation;
+        headVcam.transform.localRotation = Quaternion.Euler(rotationX, 0.0f, 0.0f);
+        transform.Rotate(Vector3.up * rotationY);
     }
 }

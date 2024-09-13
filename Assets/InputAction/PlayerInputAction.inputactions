@@ -37,10 +37,10 @@
                 {
                     "name": "",
                     "id": "2edb5d7c-238b-4577-982d-7d242cec9e80",
-                    "path": "<Mouse>/delta",
+                    "path": "<Pointer>/delta",
                     "interactions": "",
-                    "processors": "",
-                    "groups": "",
+                    "processors": "InvertVector2(invertX=false),ScaleVector2(x=0.05,y=0.05)",
+                    "groups": "KM",
                     "action": "Aim",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -136,5 +136,22 @@
             ]
         }
     ],
-    "controlSchemes": []
+    "controlSchemes": [
+        {
+            "name": "KM",
+            "bindingGroup": "KM",
+            "devices": [
+                {
+                    "devicePath": "<Keyboard>",
+                    "isOptional": false,
+                    "isOR": false
+                },
+                {
+                    "devicePath": "<Mouse>",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
 }

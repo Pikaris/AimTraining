@@ -34,6 +34,8 @@ public class Player : MonoBehaviour
     float mousePosX;
     float mousePosY;
 
+    private const float threshHold = 0.05f;
+
     private bool IsInputDevice
     {
         get
@@ -55,16 +57,12 @@ public class Player : MonoBehaviour
         headVcam = child.GetComponent<CinemachineVirtualCamera>();
 
         Cursor.lockState = CursorLockMode.Locked;
-        rigid.freezeRotation = true;
 
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
-
-        headVcam.transform.rotation = Quaternion.Euler(0, 0, 0);
     }
 
     private void Start()
     {
-        //inputAction = GetComponent<PlayerInputAction>();
 #if ENABLE_INPUT_SYSTEM
         playerInput = GetComponent<PlayerInput>();
 #else
@@ -78,23 +76,23 @@ public class Player : MonoBehaviour
         inputAction.Player.Move.performed += OnMove;
         inputAction.Player.Move.canceled += OnMove;
         inputAction.Player.Click.performed += OnFire;
-        inputAction.Player.Click.canceled += OnFire;
         inputAction.Player.Aim.performed += OnAim;
+        inputAction.Player.Aim.canceled += OnAim;
     }
 
     private void OnDisable()
     {
+        inputAction.Player.Aim.canceled -= OnAim;
         inputAction.Player.Aim.performed -= OnAim;
-        inputAction.Player.Move.performed -= OnMove;
-        inputAction.Player.Move.canceled -= OnMove;
         inputAction.Player.Click.performed -= OnFire;
-        inputAction.Player.Click.canceled -= OnFire;
+        inputAction.Player.Move.canceled -= OnMove;
+        inputAction.Player.Move.performed -= OnMove;
         inputAction.Player.Disable();
     }
 
     private void FixedUpdate()
     {
-        //rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * movePosition, Quaternion.Euler(0, rotationY, 0));
+        Move();
     }
 
     private void Update()
@@ -120,7 +118,7 @@ public class Player : MonoBehaviour
     {
         Ray ray = Camera.main.ScreenPointToRay(screenCenter);
         RaycastHit hit;
-        if(Physics.Raycast(ray, out hit, 200.0f))
+        if(Physics.Raycast(ray, out hit, 300.0f))
         {
             if(hit.collider.CompareTag("Target"))
             {
@@ -135,24 +133,57 @@ public class Player : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 마우스 에임 함수
+    /// </summary>
     void LookAim()
     {
-        //if (inputAction.Player.Aim.WasPressedThisFrame)
-        //float camRotX = headVcam.transform.rotation.x;
-        //float camRotY = headVcam.transform.rotation.y;
+        if (mousePos.sqrMagnitude >= threshHold)
+        {
+            CalculateAim();
+        }
+        else
+        {
+            mousePos = new Vector2(0, 0);
+            CalculateAim();
+        }
+    }
 
-        float deltaTimeMultiplier = IsInputDevice ? 1.0f : Time.deltaTime;
+    /// <summary>
+    /// 마우스 에임에 필요한 계산을 하는 함수
+    /// </summary>
+    private void CalculateAim()
+    {
+        float fixedDeltaTimeMultiplier = IsInputDevice ? 1.0f : Time.fixedDeltaTime;
 
-        rotationY = mousePos.x * mouseSensitivityX * deltaTimeMultiplier;
-        rotationX += mousePos.y * mouseSensitivityY * deltaTimeMultiplier;
+        rotationX += mousePos.y * mouseSensitivityY * fixedDeltaTimeMultiplier;
+        rotationY = mousePos.x * mouseSensitivityX * fixedDeltaTimeMultiplier;
 
-        //camRotX = Mathf.Clamp(headVcam.transform.rotation.x, limitMinY, limitMaxY);
-        //camRotY = Mathf.Clamp(headVcam.transform.rotation.y, limitMinY, limitMaxY);
-
-        //Debug.Log(rotationX);
-        //Debug.Log(rotationY);
+        rotationX = ClampAngle(rotationX, -90.0f, 90.0f);
 
         headVcam.transform.localRotation = Quaternion.Euler(rotationX, 0.0f, 0.0f);
         transform.Rotate(Vector3.up * rotationY);
+    }
+
+    private void Move()
+    {
+        Vector3 direction = new Vector3(rigid.position.x, 0.0f, rigid.position.y);
+
+        direction = rigid.transform.right * movePosition.x + rigid.transform.forward * movePosition.z;
+
+        rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * direction, rigid.rotation * Quaternion.Euler(0, rotationY, 0));
+    }
+
+    private static float ClampAngle(float angle, float min, float max)
+    {
+        if (angle < -360f)
+        {
+            angle += 360f;
+        }
+        if (angle > 360f)
+        {
+            angle -= 360f;
+        }
+        return Mathf.Clamp(angle, min, max);
     }
 }

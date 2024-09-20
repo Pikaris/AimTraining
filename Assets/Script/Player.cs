@@ -12,11 +12,12 @@ public class Player : MonoBehaviour
     [SerializeField] float limitMinY = -30.0f;
     [SerializeField] float limitMaxY = 40.0f;
 
+    public float moveSpeed = 5.0f;
+
+    protected Vector3 screenCenter;
 
     float rotationX = 0;
     float rotationY = 0;
-
-    public float moveSpeed = 5.0f;
 
 #if ENABLE_INPUT_SYSTEM
     private PlayerInput playerInput;
@@ -29,10 +30,13 @@ public class Player : MonoBehaviour
 
     Vector2 mousePos;
     Vector3 movePosition;
-    Vector3 screenCenter;
 
     float mousePosX;
     float mousePosY;
+
+    bool fire = false;
+    public bool Fire => fire;
+
 
     private const float threshHold = 0.05f;
 
@@ -54,7 +58,10 @@ public class Player : MonoBehaviour
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
         Transform child = transform.GetChild(0).GetChild(0);
-        headVcam = child.GetComponent<CinemachineVirtualCamera>();
+        if (child != null)
+        {
+            headVcam = child.GetComponent<CinemachineVirtualCamera>();
+        }
 
         Cursor.lockState = CursorLockMode.Locked;
 
@@ -111,21 +118,12 @@ public class Player : MonoBehaviour
     private void OnAim(InputAction.CallbackContext context)
     {
         mousePos = context.ReadValue<Vector2>();
-        Debug.Log(mousePos);
     }
 
     private void OnFire(InputAction.CallbackContext context)
     {
-        Ray ray = Camera.main.ScreenPointToRay(screenCenter);
-        RaycastHit hit;
-        if(Physics.Raycast(ray, out hit, 300.0f))
-        {
-            if(hit.collider.CompareTag("Target"))
-            {
-                Debug.Log("Hit");
-            }
-        }
-        //ray.GetPoint
+        fire = context.ReadValue<bool>();
+        Debug.Log(fire);
     }
 
     private void DoShake()

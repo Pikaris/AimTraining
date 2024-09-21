@@ -5,17 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Wall
-  - Metal
-  - Blood
-  - Dirt
-  - Concrete
-  - ExplosiveBarrel
   - Target
-  - GasTank
-  - Metal (Static)
-  - Wood (Static)
-  - Dirt (Static)
-  - Wood
+  - Canvas
   layers:
   - Default
   - TransparentFX

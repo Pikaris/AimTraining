@@ -1,6 +1,10 @@
 using Cinemachine;
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Timeline;
+using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
 [RequireComponent(typeof(PlayerInput))]
@@ -9,8 +13,8 @@ public class Player : MonoBehaviour
 {
     [SerializeField] float mouseSensitivityX = 3.0f;
     [SerializeField] float mouseSensitivityY = 2.0f;
-    [SerializeField] float limitMinY = -30.0f;
-    [SerializeField] float limitMaxY = 40.0f;
+    [SerializeField] float limitMinY = -80.0f;
+    [SerializeField] float limitMaxY = 80.0f;
 
     public float moveSpeed = 5.0f;
 
@@ -28,6 +32,15 @@ public class Player : MonoBehaviour
 
     CinemachineVirtualCamera headVcam;
 
+    Image hitMarker;
+
+    ParticleSystem muzzleFlash;
+
+    Transform armTrans;
+
+    Coroutine coroutineFire;
+    Coroutine coroutineHit;
+
     Vector2 mousePos;
     Vector3 movePosition;
 
@@ -35,10 +48,8 @@ public class Player : MonoBehaviour
     float mousePosY;
 
     bool fire = false;
-    public bool Fire => fire;
 
-
-    private const float threshHold = 0.05f;
+    private const float threshHold = 0.01f;
 
     private bool IsInputDevice
     {
@@ -57,15 +68,30 @@ public class Player : MonoBehaviour
     {
         inputAction = new PlayerInputAction();
         rigid = GetComponent<Rigidbody>();
+
         Transform child = transform.GetChild(0).GetChild(0);
         if (child != null)
         {
             headVcam = child.GetComponent<CinemachineVirtualCamera>();
         }
 
+        child = transform.GetChild(1).GetChild(3);
+        if (child != null)
+        {
+            muzzleFlash = child.GetComponent<ParticleSystem>();
+        }
+
+        child = transform.GetChild(1);
+        if (child != null)
+        {
+            armTrans = child.GetComponent<Transform>();
+        }
+
+
         Cursor.lockState = CursorLockMode.Locked;
 
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
+
     }
 
     private void Start()
@@ -75,6 +101,16 @@ public class Player : MonoBehaviour
 #else
         Debug.LogError("KeyboardMouse Error");
 #endif
+        GameObject canvasObject = GameObject.FindGameObjectWithTag("Canvas");
+        Canvas canvas = canvasObject.GetComponent<Canvas>();
+        Transform canvasChild = canvas.transform.GetChild(1);
+        hitMarker = canvasChild.GetComponent<Image>();
+        hitMarker.enabled = false;
+
+        muzzleFlash.Stop();
+
+        StartCoroutine(FiringCoroutine());
+        StartCoroutine(HitCoroutine());
     }
 
     private void OnEnable()
@@ -83,6 +119,7 @@ public class Player : MonoBehaviour
         inputAction.Player.Move.performed += OnMove;
         inputAction.Player.Move.canceled += OnMove;
         inputAction.Player.Click.performed += OnFire;
+        inputAction.Player.Click.canceled += OnFire;
         inputAction.Player.Aim.performed += OnAim;
         inputAction.Player.Aim.canceled += OnAim;
     }
@@ -91,6 +128,7 @@ public class Player : MonoBehaviour
     {
         inputAction.Player.Aim.canceled -= OnAim;
         inputAction.Player.Aim.performed -= OnAim;
+        inputAction.Player.Click.canceled -= OnFire;
         inputAction.Player.Click.performed -= OnFire;
         inputAction.Player.Move.canceled -= OnMove;
         inputAction.Player.Move.performed -= OnMove;
@@ -104,6 +142,7 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
+        OnFiring();
     }
 
     private void LateUpdate()
@@ -122,18 +161,12 @@ public class Player : MonoBehaviour
 
     private void OnFire(InputAction.CallbackContext context)
     {
-        fire = context.ReadValue<bool>();
-        Debug.Log(fire);
+        fire = inputAction.Player.Click.IsPressed();
+
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 1.5f;
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 1.5f;
     }
 
-    private void DoShake()
-    {
-
-    }
-
-    /// <summary>
-    /// 마우스 에임 함수
-    /// </summary>
     void LookAim()
     {
         if (mousePos.sqrMagnitude >= threshHold)
@@ -147,9 +180,40 @@ public class Player : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 마우스 에임에 필요한 계산을 하는 함수
-    /// </summary>
+    private void OnFiring()
+    {
+        if(fire)
+        {
+            muzzleFlash.Play();
+        }
+        else
+        {
+            muzzleFlash.Stop();
+            hitMarker.enabled = false;
+
+            headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
+            headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
+        }
+    }
+
+    private void AimRayCast()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(screenCenter);
+        RaycastHit rayHit;
+        if (Physics.Raycast(ray, out rayHit, 300.0f))
+        {
+            if (rayHit.collider.CompareTag("Target"))
+            {
+                hitMarker.enabled = true;
+                Debug.Log("Hit");
+            }
+            else
+            {
+                hitMarker.enabled = false;
+            }
+        }
+    }
+
     private void CalculateAim()
     {
         float fixedDeltaTimeMultiplier = IsInputDevice ? 1.0f : Time.fixedDeltaTime;
@@ -157,10 +221,11 @@ public class Player : MonoBehaviour
         rotationX += mousePos.y * mouseSensitivityY * fixedDeltaTimeMultiplier;
         rotationY = mousePos.x * mouseSensitivityX * fixedDeltaTimeMultiplier;
 
-        rotationX = ClampAngle(rotationX, -90.0f, 90.0f);
+        rotationX = ClampAngle(rotationX, limitMinY, limitMaxY);
 
         headVcam.transform.localRotation = Quaternion.Euler(rotationX, 0.0f, 0.0f);
         transform.Rotate(Vector3.up * rotationY);
+        armTrans.localRotation = Quaternion.Euler(rotationX * 0.5f, 0.0f, 0.0f);
     }
 
     private void Move()
@@ -183,5 +248,39 @@ public class Player : MonoBehaviour
             angle -= 360f;
         }
         return Mathf.Clamp(angle, min, max);
+    }
+
+    IEnumerator FiringCoroutine()
+    {
+        while (true)
+        {
+            if (fire)
+            {
+                AimRayCast();
+
+                yield return new WaitForSeconds(0.1f);
+            }
+            else
+            {
+                yield return null;
+            }
+        }
+    }
+
+    IEnumerator HitCoroutine()
+    {
+        while (true)
+        {
+            if (hitMarker.enabled)
+            {
+                Debug.Log("hitMarkerDisable");
+                yield return new WaitForSeconds(0.05f);
+                hitMarker.enabled = false;
+            }
+            else
+            {
+                yield return null;
+            }
+        }
     }
 }

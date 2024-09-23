@@ -3,57 +3,49 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public class Target : MonoBehaviour
+public class Target : TargetManager
 {
-    Transform[] targets;
+    private TextMeshPro textMeshPro;
 
-    TextMeshProUGUI textMeshPro;
+    Coroutine setTextCoroutine;
 
-    Player player;
+    bool hitted;
 
-    public float hp = 100.0f;
-
-    Transform hittedTarget;
-
-    public float HP
+    public bool Hitted
     {
-        get { return hp; }
-    }
+        set
+        {
+            hitted = value;
 
+            if (setTextCoroutine != null)
+            {
+                if (hitted)
+                {
+                    transform.position = new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), Random.Range(minZ, maxZ));
+                    gameObject.SetActive(true);
+                    setTextCoroutine = StartCoroutine(SetTextCoroutine());
+                }
+                else
+                {
+                    StopCoroutine(setTextCoroutine);
+                }
+            }
+        }
+    }
 
     private void Awake()
     {
-    }
-
-    private void Start()
-    {
-        GameObject canvasObject = GameObject.FindGameObjectWithTag("Canvas");
-        Canvas canvas = canvasObject.GetComponent<Canvas>();
-        Transform canvasChild = canvas.transform.GetChild(2);
-        textMeshPro = canvasChild.GetComponent<TextMeshProUGUI>();
-
-        player = FindAnyObjectByType<Player>();
-        //player = GetComponent<Player>();
+        textMeshPro = transform.GetChild(0).GetComponent<TextMeshPro>();
 
         textMeshPro.enabled = false;
     }
 
-    private void Update()
+    IEnumerator SetTextCoroutine()
     {
-        if(player.Hit)
+        while(hitted)
         {
-            textMeshPro.transform.position =  transform.position;
             textMeshPro.enabled = true;
-        }
-    }
-
-    IEnumerator HitText()
-    {
-        while (true)
-        {
-            textMeshPro.transform.position = hittedTarget.position;
-            textMeshPro.enabled = true;
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(0.5f);
             textMeshPro.enabled = false;
         }
     }

@@ -1,5 +1,6 @@
 using Cinemachine;
 using System.Collections;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -56,9 +57,6 @@ public class Player : MonoBehaviour
     bool hit = false;
 
     public bool Hit => hit;
-
-    RaycastHit rayHit;
-    public Transform RayHitTrans => rayHit.transform;
 
     private bool IsInputDevice
     {
@@ -202,6 +200,7 @@ public class Player : MonoBehaviour
             muzzleFlash.Stop();
             hit = false;
             hitMarker.enabled = false;
+            target.Hitted = false;
 
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
@@ -211,22 +210,26 @@ public class Player : MonoBehaviour
     private void AimRayCast()
     {
         Ray ray = Camera.main.ScreenPointToRay(screenCenter);
-        
+        RaycastHit rayHit;
+
         if (Physics.Raycast(ray, out rayHit, 300.0f))
         {
             if (rayHit.collider.CompareTag("Target"))
             {
                 hitMarker.enabled = true;
 
-                rayHit.collider.
+                //TextMeshPro targetText = rayHit.gameObject.transform.GetChild(0).GetComponent<TextMeshPro>;
+                rayHit.collider.gameObject.SetActive(false);
 
                 hit = true;
+                target.Hitted = true;
 
                 Debug.Log("Hit");
             }
             else
             {
                 hit = false;
+                target.Hitted = false;
                 hitMarker.enabled = false;
             }
         }
@@ -302,4 +305,6 @@ public class Player : MonoBehaviour
             }
         }
     }
+
+
 }

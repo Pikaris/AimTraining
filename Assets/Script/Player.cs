@@ -34,6 +34,8 @@ public class Player : MonoBehaviour
 
     Image hitMarker;
 
+    Target target;
+
     ParticleSystem muzzleFlash;
 
     Transform armTrans;
@@ -50,6 +52,13 @@ public class Player : MonoBehaviour
     bool fire = false;
 
     private const float threshHold = 0.01f;
+
+    bool hit = false;
+
+    public bool Hit => hit;
+
+    RaycastHit rayHit;
+    public Transform RayHitTrans => rayHit.transform;
 
     private bool IsInputDevice
     {
@@ -106,6 +115,8 @@ public class Player : MonoBehaviour
         Transform canvasChild = canvas.transform.GetChild(1);
         hitMarker = canvasChild.GetComponent<Image>();
         hitMarker.enabled = false;
+
+        target = FindFirstObjectByType<Target>();
 
         muzzleFlash.Stop();
 
@@ -189,6 +200,7 @@ public class Player : MonoBehaviour
         else
         {
             muzzleFlash.Stop();
+            hit = false;
             hitMarker.enabled = false;
 
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
@@ -199,20 +211,27 @@ public class Player : MonoBehaviour
     private void AimRayCast()
     {
         Ray ray = Camera.main.ScreenPointToRay(screenCenter);
-        RaycastHit rayHit;
+        
         if (Physics.Raycast(ray, out rayHit, 300.0f))
         {
             if (rayHit.collider.CompareTag("Target"))
             {
                 hitMarker.enabled = true;
+
+                rayHit.collider.
+
+                hit = true;
+
                 Debug.Log("Hit");
             }
             else
             {
+                hit = false;
                 hitMarker.enabled = false;
             }
         }
     }
+
 
     private void CalculateAim()
     {

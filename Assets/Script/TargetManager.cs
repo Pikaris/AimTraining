@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -5,7 +6,8 @@ public class TargetManager : MonoBehaviour
 {
     public GameObject targetCircle;
 
-    Player player;
+    GameObject hittedObj;
+
 
     public float minX = -35.0f;
     public float maxX = 35.0f;
@@ -25,25 +27,28 @@ public class TargetManager : MonoBehaviour
 
     private void Start()
     {
-        player = FindFirstObjectByType<Player>();
     }
 
-    private void Update()
+    public void SetHittedTarget(GameObject obj)
     {
-        if(player.Hit)
-        {
-            //SetRandomTarget();
-        }
+        hittedObj = obj;
+        hittedObj.SetActive(false);
+        hittedObj.transform.position = RandomPosition();
+        hittedObj.SetActive(true);
     }
 
     private void SetRandomTarget()
     {
         if(targetCircle != null)
         {
-            targetCircle.transform.position =
-                new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), Random.Range(minZ, maxZ));
+            targetCircle.transform.position = RandomPosition();
 
             Instantiate(targetCircle);
         }
+    }
+
+    private Vector3 RandomPosition()
+    {
+        return new(UnityEngine.Random.Range(minX, maxX), UnityEngine.Random.Range(minY, maxY), UnityEngine.Random.Range(minZ, maxZ));
     }
 }

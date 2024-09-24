@@ -35,9 +35,9 @@ public class Player : MonoBehaviour
 
     Image hitMarker;
 
-    Target target;
-
     ParticleSystem muzzleFlash;
+
+    TargetManager target;
 
     Transform armTrans;
 
@@ -53,10 +53,6 @@ public class Player : MonoBehaviour
     bool fire = false;
 
     private const float threshHold = 0.01f;
-
-    bool hit = false;
-
-    public bool Hit => hit;
 
     private bool IsInputDevice
     {
@@ -114,7 +110,7 @@ public class Player : MonoBehaviour
         hitMarker = canvasChild.GetComponent<Image>();
         hitMarker.enabled = false;
 
-        target = FindFirstObjectByType<Target>();
+        target = FindAnyObjectByType<TargetManager>();
 
         muzzleFlash.Stop();
 
@@ -198,9 +194,7 @@ public class Player : MonoBehaviour
         else
         {
             muzzleFlash.Stop();
-            hit = false;
             hitMarker.enabled = false;
-            target.Hitted = false;
 
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
@@ -216,20 +210,16 @@ public class Player : MonoBehaviour
         {
             if (rayHit.collider.CompareTag("Target"))
             {
+                //rayHit.collider.gameObject.SetActive(false);
+
                 hitMarker.enabled = true;
 
-                //TextMeshPro targetText = rayHit.gameObject.transform.GetChild(0).GetComponent<TextMeshPro>;
-                rayHit.collider.gameObject.SetActive(false);
-
-                hit = true;
-                target.Hitted = true;
+                target.SetHittedTarget(rayHit.collider.gameObject);
 
                 Debug.Log("Hit");
             }
             else
             {
-                hit = false;
-                target.Hitted = false;
                 hitMarker.enabled = false;
             }
         }

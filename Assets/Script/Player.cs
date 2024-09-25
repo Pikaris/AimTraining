@@ -94,7 +94,6 @@ public class Player : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
 
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
-
     }
 
     private void Start()
@@ -155,6 +154,42 @@ public class Player : MonoBehaviour
         LookAim();
     }
 
+    private void OnOption()
+    {
+        Option option = FindAnyObjectByType<Option>();
+
+        option.DisplayOption += () =>
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        };
+    }
+
+
+    private void AimRayCast()
+    {
+        Ray ray = Camera.main.ScreenPointToRay(screenCenter);
+        RaycastHit rayHit;
+
+        if (Physics.Raycast(ray, out rayHit, 300.0f))
+        {
+            if (rayHit.collider.CompareTag("Target"))
+            {
+                //rayHit.collider.gameObject.SetActive(false);
+
+                hitMarker.enabled = true;
+
+                target.SetHittedTarget(rayHit.collider.gameObject);
+
+                Debug.Log("Hit");
+            }
+            else
+            {
+                hitMarker.enabled = false;
+            }
+        }
+    }
+
     private void OnMove(InputAction.CallbackContext context)
     {
         movePosition = context.ReadValue<Vector3>();
@@ -187,7 +222,7 @@ public class Player : MonoBehaviour
 
     private void OnFiring()
     {
-        if(fire)
+        if (fire)
         {
             muzzleFlash.Play();
         }
@@ -200,31 +235,6 @@ public class Player : MonoBehaviour
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
         }
     }
-
-    private void AimRayCast()
-    {
-        Ray ray = Camera.main.ScreenPointToRay(screenCenter);
-        RaycastHit rayHit;
-
-        if (Physics.Raycast(ray, out rayHit, 300.0f))
-        {
-            if (rayHit.collider.CompareTag("Target"))
-            {
-                //rayHit.collider.gameObject.SetActive(false);
-
-                hitMarker.enabled = true;
-
-                target.SetHittedTarget(rayHit.collider.gameObject);
-
-                Debug.Log("Hit");
-            }
-            else
-            {
-                hitMarker.enabled = false;
-            }
-        }
-    }
-
 
     private void CalculateAim()
     {

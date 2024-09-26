@@ -39,7 +39,12 @@ public class Player : MonoBehaviour
 
     TargetManager target;
 
+    /// <summary>
+    /// ÆÈÀÇ Æ®·£½ºÆû
+    /// </summary>
     Transform armTrans;
+
+    Option option;
 
     Coroutine coroutineFire;
     Coroutine coroutineHit;
@@ -112,6 +117,7 @@ public class Player : MonoBehaviour
         target = FindAnyObjectByType<TargetManager>();
 
         muzzleFlash.Stop();
+        option = FindAnyObjectByType<Option>(FindObjectsInactive.Include);
 
         StartCoroutine(FiringCoroutine());
         StartCoroutine(HitCoroutine());
@@ -156,10 +162,9 @@ public class Player : MonoBehaviour
 
     private void OnOption()
     {
-        Option option = FindAnyObjectByType<Option>();
-
         option.DisplayOption += () =>
         {
+            Debug.Log("Hello");
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         };

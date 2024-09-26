@@ -10,29 +10,43 @@ public class Option : MonoBehaviour
 
     Transform optionPanel;
 
-    public Action DisplayOption; 
+    Player player;
+
+    public Action DisplayOption;
 
     private void Awake()
     {
         inputAction = new PlayerInputAction();
-        Transform child = transform.GetChild(2);
-        optionPanel = child.GetComponent<Transform>();
+        //optionPanel = transform.GetChild(2).GetComponent<Transform>();
     }
 
     private void OnEnable()
     {
-        inputAction.Enable();
+        inputAction.UI.Enable();
         inputAction.UI.Option.performed += OnOption;
     }
 
     private void OnDisable()
     {
         inputAction.UI.Option.canceled -= OnOption;
-        inputAction.Disable();
+        inputAction.UI.Disable();
     }
-    private void OnOption(InputAction.CallbackContext context)
+
+    private void Start()
     {
+        player = FindAnyObjectByType<Player>();
+    }
+
+
+    private void OnOption(InputAction.CallbackContext _)
+    {
+        Display();
+    }
+
+    void Display()
+    {
+        Debug.Log("HI");
         DisplayOption?.Invoke();
-        optionPanel.gameObject.SetActive(true);
+        gameObject.SetActive(true);
     }
 }

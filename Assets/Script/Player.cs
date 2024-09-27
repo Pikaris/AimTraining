@@ -24,6 +24,9 @@ public class Player : MonoBehaviour
     float rotationX = 0;
     float rotationY = 0;
 
+    float maxSensX = 100.0f;
+    float maxSensY = 100.0f;
+
 #if ENABLE_INPUT_SYSTEM
     private PlayerInput playerInput;
 #endif
@@ -44,8 +47,6 @@ public class Player : MonoBehaviour
     /// </summary>
     Transform armTrans;
 
-    Option option;
-
     Coroutine coroutineFire;
     Coroutine coroutineHit;
 
@@ -55,7 +56,7 @@ public class Player : MonoBehaviour
     float mousePosX;
     float mousePosY;
 
-    bool fire = false;
+    bool isFire = false;
 
     private const float threshHold = 0.01f;
 
@@ -70,7 +71,29 @@ public class Player : MonoBehaviour
             #endif
         }
     }
-    
+
+    public float SensitivityX
+    {
+        get => mouseSensitivityX;
+        set
+        {
+            mouseSensitivityX = value;
+        }
+    }
+
+    public float SensitivityY
+    { 
+        get => mouseSensitivityY;
+        set
+        {
+            mouseSensitivityY = value;
+        }
+    }
+
+    public float MaxSensitivityX => maxSensX
+;
+    public float MaxSensitivityY => maxSensY;
+
 
     private void Awake()
     {
@@ -99,6 +122,7 @@ public class Player : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
 
         screenCenter = new Vector3(Camera.main.pixelWidth * 0.5f, Camera.main.pixelHeight * 0.5f);
+
     }
 
     private void Start()
@@ -117,7 +141,6 @@ public class Player : MonoBehaviour
         target = FindAnyObjectByType<TargetManager>();
 
         muzzleFlash.Stop();
-        option = FindAnyObjectByType<Option>(FindObjectsInactive.Include);
 
         StartCoroutine(FiringCoroutine());
         StartCoroutine(HitCoroutine());
@@ -160,17 +183,6 @@ public class Player : MonoBehaviour
         LookAim();
     }
 
-    private void OnOption()
-    {
-        option.DisplayOption += () =>
-        {
-            Debug.Log("Hello");
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        };
-    }
-
-
     private void AimRayCast()
     {
         Ray ray = Camera.main.ScreenPointToRay(screenCenter);
@@ -180,8 +192,6 @@ public class Player : MonoBehaviour
         {
             if (rayHit.collider.CompareTag("Target"))
             {
-                //rayHit.collider.gameObject.SetActive(false);
-
                 hitMarker.enabled = true;
 
                 target.SetHittedTarget(rayHit.collider.gameObject);
@@ -195,6 +205,25 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void OnOption(bool isDisplayOption)
+    {
+        if (isDisplayOption)
+        {
+            Debug.Log("on");
+            inputAction.Player.Disable();
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            Debug.Log("off");
+            inputAction.Player.Enable();
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+
     private void OnMove(InputAction.CallbackContext context)
     {
         movePosition = context.ReadValue<Vector3>();
@@ -206,7 +235,7 @@ public class Player : MonoBehaviour
 
     private void OnFire(InputAction.CallbackContext context)
     {
-        fire = inputAction.Player.Click.IsPressed();
+        isFire = inputAction.Player.Click.IsPressed();
 
         headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 1.5f;
         headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 1.5f;
@@ -227,7 +256,7 @@ public class Player : MonoBehaviour
 
     private void OnFiring()
     {
-        if (fire)
+        if (isFire)
         {
             muzzleFlash.Play();
         }
@@ -277,11 +306,15 @@ public class Player : MonoBehaviour
         return Mathf.Clamp(angle, min, max);
     }
 
+    /// <summary>
+    /// 총을 쐈을 때 실행되는 코루틴
+    /// </summary>
+    /// <returns></returns>
     IEnumerator FiringCoroutine()
     {
         while (true)
         {
-            if (fire)
+            if (isFire)
             {
                 AimRayCast();
 
@@ -294,6 +327,10 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 총이 표적에 맞았을 때 마커를 표시 시키는 코루틴
+    /// </summary>
+    /// <returns></returns>
     IEnumerator HitCoroutine()
     {
         while (true)
@@ -310,6 +347,4 @@ public class Player : MonoBehaviour
             }
         }
     }
-
-
 }

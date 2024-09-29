@@ -1,10 +1,8 @@
 using Cinemachine;
+using System;
 using System.Collections;
-using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Timeline;
 using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
@@ -42,9 +40,6 @@ public class Player : MonoBehaviour
 
     TargetManager target;
 
-    /// <summary>
-    /// ÆÈÀÇ Æ®·£½ºÆû
-    /// </summary>
     Transform armTrans;
 
     Coroutine coroutineFire;
@@ -58,7 +53,9 @@ public class Player : MonoBehaviour
 
     bool isFire = false;
 
-    private const float threshHold = 0.01f;
+    private const float threshHold = 0.005f;
+
+    public Action onHit;
 
     private bool IsInputDevice
     {
@@ -196,6 +193,8 @@ public class Player : MonoBehaviour
 
                 target.SetHittedTarget(rayHit.collider.gameObject);
 
+                onHit?.Invoke();
+
                 Debug.Log("Hit");
             }
             else
@@ -307,7 +306,7 @@ public class Player : MonoBehaviour
     }
 
     /// <summary>
-    /// ÃÑÀ» ½úÀ» ¶§ ½ÇÇàµÇ´Â ÄÚ·çÆ¾
+    /// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½Ú·ï¿½Æ¾
     /// </summary>
     /// <returns></returns>
     IEnumerator FiringCoroutine()
@@ -328,7 +327,7 @@ public class Player : MonoBehaviour
     }
 
     /// <summary>
-    /// ÃÑÀÌ Ç¥Àû¿¡ ¸Â¾ÒÀ» ¶§ ¸¶Ä¿¸¦ Ç¥½Ã ½ÃÅ°´Â ÄÚ·çÆ¾
+    /// ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ï¿½ï¿½ ï¿½Â¾ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¿ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½Å°ï¿½ï¿½ ï¿½Ú·ï¿½Æ¾
     /// </summary>
     /// <returns></returns>
     IEnumerator HitCoroutine()

@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class Option : MonoBehaviour
 {
+    int hitCount = 0;
+
     PlayerInputAction inputAction;
 
     Transform optionPanel;
@@ -14,9 +17,30 @@ public class Option : MonoBehaviour
     Slider sliderX;
     Slider sliderY;
 
+    TextMeshPro sliderX_InputText;
+    TextMeshPro sliderY_InputText;
+
+    TextMeshPro sliderX_OutputText;
+    TextMeshPro sliderY_OutputText;
+
+    TextMeshPro hitCountText;
+
     Player player;
 
     bool isDisplayingOption = false;
+
+    float SliderX_Value
+    {
+        get { return sliderX.value; }
+        set { sliderX.value = value; }
+    }
+
+    float SliderY_Value
+    {
+        get { return sliderY.value ; }
+        set { sliderY.value = value; }
+    }
+
 
 
     private void Awake()
@@ -32,7 +56,10 @@ public class Option : MonoBehaviour
 
         child = transform.GetChild(2);
         child = child.GetChild(1);                      // SensitivityY
-        sliderY = child.GetComponent<Slider>();       
+        sliderY = child.GetComponent<Slider>();
+
+        child = transform.GetChild(3);
+        hitCountText = child.GetComponent<TextMeshPro>();
 
         player = FindAnyObjectByType<Player>();
     }
@@ -54,6 +81,16 @@ public class Option : MonoBehaviour
         player = FindAnyObjectByType<Player>();
     }
 
+    private void HitCountText()
+    {
+        player.onHit += () =>
+        {
+            hitCount++;
+            //Debug.Log(hitCount);
+            //hitCountText.text = hitCount.ToString();
+        };
+    }
+
 
     private void OnOption(InputAction.CallbackContext _)
     {
@@ -62,7 +99,11 @@ public class Option : MonoBehaviour
             player.OnOption(true);
             optionPanel.gameObject.SetActive(true);
             isDisplayingOption = true;
-            ChangeSensitivity();
+            
+            sliderX.value = player.SensitivityX / player.MaxSensitivityX;
+            sliderY.value = player.SensitivityY / player.MaxSensitivityY;
+            sliderX.onValueChanged.AddListener(delegate { ChangeXSensitivity(); });
+            sliderY.onValueChanged.AddListener(delegate { ChangeYSensitivity(); });
         }
         else
         {
@@ -72,12 +113,15 @@ public class Option : MonoBehaviour
         }
     }
 
-    private void ChangeSensitivity()
-    {
-        sliderX.value = player.SensitivityX / player.MaxSensitivityX;
-        sliderY.value = player.SensitivityY / player.MaxSensitivityY;
+    
 
+    private void ChangeXSensitivity()
+    {
         player.SensitivityX = sliderX.value * player.MaxSensitivityX;
+    }
+
+    private void ChangeYSensitivity()
+    {
         player.SensitivityY = sliderY.value * player.MaxSensitivityY;
     }
 }

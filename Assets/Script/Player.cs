@@ -25,6 +25,11 @@ public class Player : MonoBehaviour
     float maxSensX = 100.0f;
     float maxSensY = 100.0f;
 
+    float mousePosX;
+    float mousePosY;
+
+    int hitCount;
+
 #if ENABLE_INPUT_SYSTEM
     private PlayerInput playerInput;
 #endif
@@ -48,14 +53,17 @@ public class Player : MonoBehaviour
     Vector2 mousePos;
     Vector3 movePosition;
 
-    float mousePosX;
-    float mousePosY;
 
-    bool isFire = false;
+    Coroutine AutoFire;
 
     private const float threshHold = 0.005f;
 
-    public Action onHit;
+    bool isAutoFire = true;
+    bool isCanFire = true;
+    bool isFire = false;
+
+
+    public Action onHitChange;
 
     private bool IsInputDevice
     {
@@ -90,6 +98,19 @@ public class Player : MonoBehaviour
     public float MaxSensitivityX => maxSensX
 ;
     public float MaxSensitivityY => maxSensY;
+
+    public int HitCount
+    {
+        get => hitCount;
+        set
+        {
+            if (hitCount != value)
+            {
+                hitCount = value;
+                onHitChange?.Invoke();
+            }
+        }
+    }
 
 
     private void Awake()
@@ -139,8 +160,8 @@ public class Player : MonoBehaviour
 
         muzzleFlash.Stop();
 
-        StartCoroutine(FiringCoroutine());
-        StartCoroutine(HitCoroutine());
+        StartCoroutine(GunFire());
+        StartCoroutine(HitMarker());
     }
 
     private void OnEnable()
@@ -152,10 +173,13 @@ public class Player : MonoBehaviour
         inputAction.Player.Click.canceled += OnFire;
         inputAction.Player.Aim.performed += OnAim;
         inputAction.Player.Aim.canceled += OnAim;
+        inputAction.Player.ChangeFireMode.performed += OnChangeFireMode;
     }
+
 
     private void OnDisable()
     {
+        inputAction.Player.ChangeFireMode.performed -= OnChangeFireMode;
         inputAction.Player.Aim.canceled -= OnAim;
         inputAction.Player.Aim.performed -= OnAim;
         inputAction.Player.Click.canceled -= OnFire;
@@ -193,7 +217,7 @@ public class Player : MonoBehaviour
 
                 target.SetHittedTarget(rayHit.collider.gameObject);
 
-                onHit?.Invoke();
+                HitCount++;
 
                 Debug.Log("Hit");
             }
@@ -234,7 +258,31 @@ public class Player : MonoBehaviour
 
     private void OnFire(InputAction.CallbackContext context)
     {
-        isFire = inputAction.Player.Click.IsPressed();
+        if (isAutoFire)
+        {
+            isFire = inputAction.Player.Click.IsPressed();
+        }
+        else
+        {
+            AimRayCast();
+            //isFire = false;
+            //if (isCanFire)
+            //{
+            //    isFire = true;
+            //    isCanFire = false;
+            //}
+            //else
+            //{
+            //    Debug.Log("isFire false");
+
+            //    isFire = false;
+            //    if (!inputAction.Player.Click.IsPressed())
+            //    {
+            //        Debug.Log("CanFire");
+            //        isCanFire = true;
+            //    }
+            //}
+        }
 
         headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 1.5f;
         headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 1.5f;
@@ -266,6 +314,21 @@ public class Player : MonoBehaviour
 
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
             headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
+        }
+    }
+
+    private void OnChangeFireMode(InputAction.CallbackContext context)
+    {
+        isAutoFire ^= true;
+        if(isAutoFire)
+        {
+            Debug.Log("Auto");
+            //isAutoFire = false;
+        }
+        else
+        {
+            Debug.Log("Single");
+            //isAutoFire = true;
         }
     }
 
@@ -309,7 +372,7 @@ public class Player : MonoBehaviour
     /// ���� ���� �� ����Ǵ� �ڷ�ƾ
     /// </summary>
     /// <returns></returns>
-    IEnumerator FiringCoroutine()
+    IEnumerator GunFire()
     {
         while (true)
         {
@@ -330,7 +393,7 @@ public class Player : MonoBehaviour
     /// ���� ǥ���� �¾��� �� ��Ŀ�� ǥ�� ��Ű�� �ڷ�ƾ
     /// </summary>
     /// <returns></returns>
-    IEnumerator HitCoroutine()
+    IEnumerator HitMarker()
     {
         while (true)
         {
@@ -344,6 +407,14 @@ public class Player : MonoBehaviour
             {
                 yield return null;
             }
+        }
+    }
+
+    IEnumerator MuzzleFlash()
+    {
+        while(true)
+        {
+            //if()
         }
     }
 }

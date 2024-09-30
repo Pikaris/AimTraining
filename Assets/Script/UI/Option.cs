@@ -8,8 +8,6 @@ using UnityEngine.UI;
 
 public class Option : MonoBehaviour
 {
-    int hitCount = 0;
-
     PlayerInputAction inputAction;
 
     Transform optionPanel;
@@ -22,8 +20,6 @@ public class Option : MonoBehaviour
 
     TextMeshPro sliderX_OutputText;
     TextMeshPro sliderY_OutputText;
-
-    TextMeshPro hitCountText;
 
     Player player;
 
@@ -58,9 +54,6 @@ public class Option : MonoBehaviour
         child = child.GetChild(1);                      // SensitivityY
         sliderY = child.GetComponent<Slider>();
 
-        child = transform.GetChild(3);
-        hitCountText = child.GetComponent<TextMeshPro>();
-
         player = FindAnyObjectByType<Player>();
     }
 
@@ -81,15 +74,6 @@ public class Option : MonoBehaviour
         player = FindAnyObjectByType<Player>();
     }
 
-    private void HitCountText()
-    {
-        player.onHit += () =>
-        {
-            hitCount++;
-            //Debug.Log(hitCount);
-            //hitCountText.text = hitCount.ToString();
-        };
-    }
 
 
     private void OnOption(InputAction.CallbackContext _)

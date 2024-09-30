@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Timeline;
 using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
@@ -10,12 +11,17 @@ using UnityEngine.UI;
 #endif
 public class Player : MonoBehaviour
 {
-    [SerializeField] float mouseSensitivityX = 3.0f;
-    [SerializeField] float mouseSensitivityY = 2.0f;
-    [SerializeField] float limitMinY = -80.0f;
-    [SerializeField] float limitMaxY = 80.0f;
+    public float mouseSensitivityX = 3.0f;
+    public float mouseSensitivityY = 2.0f;
+    public float limitMinY = -80.0f;
+    public float limitMaxY = 80.0f;
+
+    public float maxSingleMuzzleFlashTime = 0.2f;
+    public float maxHitMarkerTime = 0.1f;
 
     public float moveSpeed = 5.0f;
+
+    public float fireInterval = 0.3f;
 
     protected Vector3 screenCenter;
 
@@ -28,7 +34,11 @@ public class Player : MonoBehaviour
     float mousePosX;
     float mousePosY;
 
+    float muzzleFlashDeltaTime = 0;
+    float hitMarkerDeltaTime = 0;
+
     int hitCount;
+    int shootCount;
 
 #if ENABLE_INPUT_SYSTEM
     private PlayerInput playerInput;
@@ -53,17 +63,14 @@ public class Player : MonoBehaviour
     Vector2 mousePos;
     Vector3 movePosition;
 
-
-    Coroutine AutoFire;
-
-    private const float threshHold = 0.005f;
+    private const float threshHold = 0.002f;
 
     bool isAutoFire = true;
-    bool isCanFire = true;
     bool isFire = false;
 
-
     public Action onHitChange;
+
+    public Action<bool> onFireMode;
 
     private bool IsInputDevice
     {
@@ -108,6 +115,18 @@ public class Player : MonoBehaviour
             {
                 hitCount = value;
                 onHitChange?.Invoke();
+            }
+        }
+    }
+
+    public int ShootCount
+    {
+        get => shootCount;
+        set
+        {
+            if (shootCount != value)
+            {
+                shootCount = value;
             }
         }
     }
@@ -160,8 +179,7 @@ public class Player : MonoBehaviour
 
         muzzleFlash.Stop();
 
-        StartCoroutine(GunFire());
-        StartCoroutine(HitMarker());
+        Initialize();
     }
 
     private void OnEnable()
@@ -197,11 +215,28 @@ public class Player : MonoBehaviour
     private void Update()
     {
         OnFiring();
+        muzzleFlashDeltaTime += Time.deltaTime;
+        hitMarkerDeltaTime += Time.deltaTime;
     }
 
     private void LateUpdate()
     {
         LookAim();
+    }
+
+    public void Initialize()
+    {
+        transform.position = new(0, 0, 0);
+        transform.rotation = Quaternion.identity;
+        hitMarker.enabled = false;
+        muzzleFlash.Stop();
+        isAutoFire = true;
+        isFire = false;
+        HitCount = 0;
+        ShootCount = 0;
+        muzzleFlashDeltaTime = 0;
+        hitMarkerDeltaTime = 0;
+        StopAllCoroutines();
     }
 
     private void AimRayCast()
@@ -213,8 +248,8 @@ public class Player : MonoBehaviour
         {
             if (rayHit.collider.CompareTag("Target"))
             {
-                hitMarker.enabled = true;
-
+                hitMarkerDeltaTime = 0;
+                StartCoroutine(HitMarker());
                 target.SetHittedTarget(rayHit.collider.gameObject);
 
                 HitCount++;
@@ -232,14 +267,12 @@ public class Player : MonoBehaviour
     {
         if (isDisplayOption)
         {
-            Debug.Log("on");
             inputAction.Player.Disable();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
         else
         {
-            Debug.Log("off");
             inputAction.Player.Enable();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -258,34 +291,22 @@ public class Player : MonoBehaviour
 
     private void OnFire(InputAction.CallbackContext context)
     {
+
         if (isAutoFire)
         {
             isFire = inputAction.Player.Click.IsPressed();
         }
-        else
+        else if(context.performed)
         {
-            AimRayCast();
-            //isFire = false;
-            //if (isCanFire)
-            //{
-            //    isFire = true;
-            //    isCanFire = false;
-            //}
-            //else
-            //{
-            //    Debug.Log("isFire false");
-
-            //    isFire = false;
-            //    if (!inputAction.Player.Click.IsPressed())
-            //    {
-            //        Debug.Log("CanFire");
-            //        isCanFire = true;
-            //    }
-            //}
+            isFire = true;
+            muzzleFlashDeltaTime = 0;
+            StartCoroutine(MuzzleFlash());
         }
 
-        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 1.5f;
-        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 1.5f;
+        if (context.performed)
+        {
+            StartCoroutine(GunFire());
+        }
     }
 
     void LookAim()
@@ -306,14 +327,13 @@ public class Player : MonoBehaviour
         if (isFire)
         {
             muzzleFlash.Play();
+            ShakeOn();
         }
         else
         {
             muzzleFlash.Stop();
             hitMarker.enabled = false;
-
-            headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
-            headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
+            ShakeOff();
         }
     }
 
@@ -323,12 +343,12 @@ public class Player : MonoBehaviour
         if(isAutoFire)
         {
             Debug.Log("Auto");
-            //isAutoFire = false;
+            onFireMode?.Invoke(true);
         }
         else
         {
             Debug.Log("Single");
-            //isAutoFire = true;
+            onFireMode?.Invoke(false);
         }
     }
 
@@ -355,6 +375,18 @@ public class Player : MonoBehaviour
         rigid.Move(rigid.position + Time.fixedDeltaTime * moveSpeed * direction, rigid.rotation * Quaternion.Euler(0, rotationY, 0));
     }
 
+    void ShakeOn()
+    {
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 1.5f;
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 1.5f;
+    }
+
+    void ShakeOff()
+    {
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 0.0f;
+        headVcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_FrequencyGain = 0.0f;
+    }
+
     private static float ClampAngle(float angle, float min, float max)
     {
         if (angle < -360f)
@@ -374,17 +406,21 @@ public class Player : MonoBehaviour
     /// <returns></returns>
     IEnumerator GunFire()
     {
-        while (true)
+        while (isFire)
         {
-            if (isFire)
+            if (isAutoFire)
             {
                 AimRayCast();
-
-                yield return new WaitForSeconds(0.1f);
+                ShootCount++;
+                Debug.Log(ShootCount);
+                yield return new WaitForSeconds(fireInterval);
             }
             else
             {
-                yield return null;
+                AimRayCast();
+                ShootCount++;
+                Debug.Log(ShootCount);
+                isFire = false;
             }
         }
     }
@@ -395,26 +431,22 @@ public class Player : MonoBehaviour
     /// <returns></returns>
     IEnumerator HitMarker()
     {
-        while (true)
+        while (hitMarkerDeltaTime < maxHitMarkerTime)
         {
-            if (hitMarker.enabled)
-            {
-                Debug.Log("hitMarkerDisable");
-                yield return new WaitForSeconds(0.05f);
-                hitMarker.enabled = false;
-            }
-            else
-            {
-                yield return null;
-            }
+            hitMarker.enabled = true;
+            yield return null;
         }
+        hitMarker.enabled = false;
     }
 
     IEnumerator MuzzleFlash()
     {
-        while(true)
+        while(muzzleFlashDeltaTime < maxSingleMuzzleFlashTime)
         {
-            //if()
+            ShakeOn();
+            muzzleFlash.Play();
+            yield return null;
         }
+        ShakeOff();
     }
 }
